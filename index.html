@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太鼓レーティングマッチ</title>
     <style>
-        /* --- デザイン定義 --- */
+        /* --- 基本デザイン --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
@@ -29,33 +29,28 @@
             text-align: center;
             border: 4px solid #ff5722;
             position: relative;
-            min-height: 650px;
+            min-height: 700px;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* 上寄せに変更 */
-            overflow-y: auto; /* コンテンツが多い場合スクロール */
+            justify-content: flex-start;
+            overflow-y: auto;
         }
 
-        /* タイトルロゴ */
+        /* 各パーツ */
         .title-section h1 { font-size: 2.5rem; color: #ff5722; text-shadow: 2px 2px 0px #ffe0b2; margin-bottom: 5px; font-weight: 900; }
         .title-section p { color: #f57c00; font-weight: bold; margin-bottom: 20px; }
-
-        /* 入力エリア */
         .input-group { margin-bottom: 20px; text-align: left; }
         .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
         .x-input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
-
-        /* プレイヤー情報 */
         .player-info { background: #333; color: #fff; padding: 8px 15px; border-radius: 50px; display: inline-block; margin-bottom: 20px; font-weight: bold; font-size: 0.9rem; }
-
-        /* ボタン */
-        .match-btn { border: none; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.1s; width: 100%; margin-bottom: 15px; color: white; font-weight: bold; position: relative; }
+        
+        .match-btn { border: none; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.1s; width: 100%; margin-bottom: 15px; color: white; font-weight: bold; font-size: 1.1rem; }
         .match-btn:active { transform: translateY(2px); }
         .mode-normal { background: linear-gradient(135deg, #42a5f5, #1e88e5); box-shadow: 0 4px 0 #1565c0; }
         .mode-hard { background: linear-gradient(135deg, #ef5350, #c62828); box-shadow: 0 4px 0 #b71c1c; }
 
         /* 画面切り替え */
-        .screen { display: none; width: 100%; animation: fadeIn 0.4s ease; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .screen { display: none; width: 100%; animation: fadeIn 0.4s ease; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex:1;}
         .screen.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -63,47 +58,36 @@
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid #ff5722; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- 演出用：曲発表 --- */
-        .reveal-box { width: 100%; margin-top: 20px; }
+        /* 演出系 */
         .opponent-x-display { font-size: 1.2rem; font-weight: bold; color: #1da1f2; margin-bottom: 20px; border: 2px solid #1da1f2; padding: 10px; border-radius: 10px; display: inline-block;}
-        
-        .song-reveal-item {
-            background: #fff3e0;
-            border: 2px solid #ff9800;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            opacity: 0; /* 最初は隠す */
-            transform: translateX(-20px);
-            transition: all 0.5s ease;
-        }
+        .song-reveal-item { background: #fff3e0; border: 2px solid #ff9800; padding: 15px; margin-bottom: 10px; border-radius: 10px; font-weight: bold; font-size: 1.1rem; opacity: 0; transform: translateX(-20px); transition: all 0.5s ease; width: 100%; text-align: left;}
         .song-reveal-item.show { opacity: 1; transform: translateX(0); }
         .song-badge { background: #ff5722; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 8px; }
 
-        .next-btn { background: #4caf50; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-size: 1.2rem; font-weight: bold; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 0 #2e7d32; display: none; } /* 最初は隠す */
-        .next-btn.show { display: inline-block; animation: pop 0.3s; }
-
-        /* --- 結果申告画面 --- */
         .report-buttons { display: flex; gap: 10px; width: 100%; margin-top: 20px; }
         .report-btn { flex: 1; padding: 15px 0; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
         .btn-win { background: #e91e63; }
         .btn-lose { background: #2196f3; }
         .btn-draw { background: #9c27b0; }
+
+        /* レート変動アニメーション用 */
+        .rate-animation-box { margin: 30px 0; font-weight: 900; }
+        .rate-value { font-size: 3rem; display: inline-block; transition: color 0.3s; }
+        .rate-diff { font-size: 1.5rem; margin-left: 10px; opacity: 0; transition: opacity 0.5s, transform 0.5s; display: inline-block; }
+        .rate-diff.show { opacity: 1; transform: translateY(-10px); }
         
-        /* 申告時の確認情報 */
-        .confirm-info { text-align: left; background: #f5f5f5; padding: 15px; border-radius: 10px; width: 100%; font-size: 0.9rem; margin-bottom: 10px; }
-        
-        /* --- モーダル（確認画面） --- */
-        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 100; border-radius: 16px;}
-        .modal-box { background: white; padding: 20px; border-radius: 15px; width: 85%; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .result-title { font-size: 2.5rem; margin-bottom: 10px; font-weight: 900; }
+        .win-color { color: #e91e63; }
+        .lose-color { color: #2196f3; }
+        .draw-color { color: #9c27b0; }
+
+        /* モーダル */
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 100; border-radius: 20px;}
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 85%; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
         .modal-btn { padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .modal-yes { background: #ff5722; color: white; }
         .modal-no { background: #ccc; }
-
-        @keyframes pop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -115,58 +99,42 @@
                 <h1>DON-DER MATCH</h1>
                 <p>Random Song Rating Battle</p>
             </header>
-
             <div class="player-info">
-                <span class="player-name">ID: Loading...</span>
-                <span class="player-rate">Rate: <span id="current-rate">1500</span></span>
+                <span class="player-name">ID: ...</span>
+                <span class="player-rate">Rate: <span id="current-rate-display">1500</span></span>
             </div>
-
             <div class="input-group">
                 <label>あなたのX(Twitter) ID</label>
-                <input type="text" id="my-x-id" class="x-input" placeholder="@ユーザー名を入力" value="@test_user">
+                <input type="text" id="my-x-id" class="x-input" placeholder="@ユーザー名を入力" value="@donder">
             </div>
-
             <div class="mode-select" style="width:100%">
-                <button class="match-btn mode-normal" onclick="startMatching('normal')">
-                    <span class="difficulty-range">F ～ A+</span> で対戦
-                </button>
-                <button class="match-btn mode-hard" onclick="startMatching('hard')">
-                    <span class="difficulty-range">S ～ SS</span> で対戦
-                </button>
+                <button class="match-btn mode-normal" onclick="startMatching('normal')">難易度 F ～ A+ で対戦</button>
+                <button class="match-btn mode-hard" onclick="startMatching('hard')">難易度 S ～ SS で対戦</button>
             </div>
         </div>
 
         <div id="matching-screen" class="screen">
             <div class="loader"></div>
             <p style="font-weight:bold;">対戦相手を探しています...</p>
-            <p id="match-status" style="color:#ff5722; font-size:0.9rem; margin-top:10px;"></p>
-            <button class="match-btn" style="background:#999; margin-top:20px;" onclick="cancelMatching()">キャンセル</button>
+            <p id="match-status" style="color:#ff5722; margin-top:10px;"></p>
+            <button class="match-btn" style="background:#999; margin-top:30px;" onclick="cancelMatching()">キャンセル</button>
         </div>
 
         <div id="reveal-screen" class="screen" style="justify-content: flex-start; padding-top: 20px;">
             <h2 style="color:#ff5722; margin-bottom:10px;">MATCH START!</h2>
-            
             <p>VS 対戦相手</p>
-            <div class="opponent-x-display" id="opponent-x-display">@opponent</div>
-
-            <div id="song-reveal-container" class="reveal-box">
-                </div>
-
-            <button id="goto-report-btn" class="next-btn" onclick="goToReportScreen()">結果を報告する</button>
+            <div class="opponent-x-display" id="opponent-x-display"></div>
+            <div id="song-reveal-container" style="width:100%; margin-top:15px;"></div>
+            <button id="goto-report-btn" class="match-btn" style="background:#4caf50; display:none; margin-top:20px;" onclick="goToReportScreen()">結果を報告する</button>
         </div>
 
         <div id="report-screen" class="screen">
             <h2 style="margin-bottom:20px;">結果報告</h2>
-            
-            <div class="confirm-info">
-                <p><strong>対戦相手:</strong> <span id="report-opponent-name"></span></p>
-                <p><strong>相手X ID:</strong> <span id="report-opponent-x"></span></p>
-                <hr style="margin:10px 0;">
-                <p><strong>課題曲:</strong></p>
-                <ul id="report-song-list" style="padding-left:20px; margin-top:5px;"></ul>
+            <p style="font-size:0.9rem; color:#666; margin-bottom:20px;">対戦お疲れ様でした。<br>勝敗を選択してください。</p>
+            <div style="background:#f5f5f5; padding:15px; border-radius:10px; width:100%; text-align:left; margin-bottom:20px;">
+                <p><strong>相手:</strong> <span id="rep-opp-name"></span></p>
+                <p><strong>課題曲:</strong> <span id="rep-song-1"></span> など</p>
             </div>
-
-            <p style="font-weight:bold; color:#ff5722;">あなたの勝敗は？</p>
             <div class="report-buttons">
                 <button class="report-btn btn-win" onclick="confirmResult('WIN')">勝ち</button>
                 <button class="report-btn btn-draw" onclick="confirmResult('DRAW')">引分</button>
@@ -174,11 +142,23 @@
             </div>
         </div>
 
-        <div id="result-screen" class="screen">
-            <div class="loader" id="result-loader"></div>
-            <h2 id="result-title">判定中...</h2>
-            <p id="result-message">相手の報告を待っています</p>
-            <button class="match-btn" style="background:#333; margin-top:30px; display:none;" id="back-to-title" onclick="location.reload()">タイトルへ戻る</button>
+        <div id="waiting-result-screen" class="screen">
+            <div class="loader"></div>
+            <h2>確認中...</h2>
+            <p>相手の申告を待っています。</p>
+            <p style="font-size:0.8rem; color:#888; margin-top:10px;">相手も結果を入力すると<br>自動で結果画面へ進みます。</p>
+        </div>
+
+        <div id="final-result-screen" class="screen">
+            <h2 id="final-title" class="result-title">WIN!</h2>
+            <p id="final-message">おめでとうございます！</p>
+            
+            <div class="rate-animation-box">
+                <div class="rate-value" id="anim-rate-val">1500</div>
+                <div class="rate-diff" id="anim-rate-diff">+20</div>
+            </div>
+
+            <button class="match-btn" style="background:#333;" onclick="location.reload()">タイトルへ戻る</button>
         </div>
 
         <div id="confirm-modal" class="modal-overlay">
@@ -189,6 +169,14 @@
                     <button class="modal-btn modal-no" onclick="closeModal()">戻る</button>
                     <button class="modal-btn modal-yes" onclick="submitResult()">決定</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="error-modal" class="modal-overlay">
+            <div class="modal-box">
+                <h3 style="color:#d32f2f;">結果不一致</h3>
+                <p style="margin:15px 0;">お互いの申告が食い違っています。<br>（例: 両方が「勝ち」を選択など）<br><br>もう一度正しい結果を入力してください。</p>
+                <button class="modal-btn modal-yes" onclick="retryReport()">再入力する</button>
             </div>
         </div>
 
@@ -215,24 +203,22 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 変数
         let currentUser = null;
+        let currentRate = 1500; // 本来はDBから取得
         let waitingDocId = null;
         let currentRoomId = null;
         let unsubscribeRoom = null;
-        let currentMatchData = {}; // 対戦データ保持用
-        let selectedResult = null; // 自分が選んだ結果
+        let currentMatchData = {};
+        let selectedResult = null;
 
-        // 曲データベース
         const songDatabase = {
             'normal': ["夏祭り", "紅", "さくらんぼ", "前前前世", "天体観測", "千本桜", "女々しくて"],
             'hard': ["幽玄ノ乱", "ドンカマ2000", "第六天魔王", "カオスタイム", "Infinite Rebellion", "双竜ノ乱"]
         };
 
-        // ログイン監視
         signInAnonymously(auth);
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
+        onAuthStateChanged(auth, user => {
+            if(user) {
                 currentUser = user;
                 document.querySelector('.player-name').innerText = "ID: " + user.uid.substring(0,4);
             }
@@ -243,228 +229,214 @@
             document.getElementById(id).classList.add('active');
         };
 
-        // 曲を選ぶ
         const pickRandomSongs = (mode) => {
             const list = songDatabase[mode] || [];
             return [...list].sort(() => 0.5 - Math.random()).slice(0, 3);
         };
 
-        // --- 1. マッチング開始 ---
+        // --- マッチング ---
         window.startMatching = async (mode) => {
             const xId = document.getElementById('my-x-id').value;
-            if (!xId) return alert("X IDを入力してください");
+            if(!xId) return alert("X IDを入力してください");
             
             window.switchScreen('matching-screen');
             document.getElementById('match-status').innerText = "待機列を確認中...";
 
             try {
-                // 自分以外を探す
                 const q = query(collection(db, "waiting_room"), where("mode", "==", mode), limit(10));
-                const snapshot = await getDocs(q);
+                const snap = await getDocs(q);
                 let opponentDoc = null;
-                
-                snapshot.forEach(d => {
-                    if (d.data().uid !== currentUser.uid) opponentDoc = d;
-                });
+                snap.forEach(d => { if(d.data().uid !== currentUser.uid) opponentDoc = d; });
 
-                if (opponentDoc) {
-                    // ★相手が見つかった（自分が部屋を作る）
-                    const oppData = opponentDoc.data();
+                if(opponentDoc) {
+                    const opp = opponentDoc.data();
                     await deleteDoc(doc(db, "waiting_room", opponentDoc.id));
-
                     const songs = pickRandomSongs(mode);
                     const roomRef = await addDoc(collection(db, "rooms"), {
-                        mode: mode,
-                        songs: songs,
-                        createdAt: new Date(),
-                        // プレイヤー情報
-                        player1: { uid: oppData.uid, xId: oppData.xId, result: null },
+                        mode: mode, songs: songs, createdAt: new Date(),
+                        player1: { uid: opp.uid, xId: opp.xId, result: null },
                         player2: { uid: currentUser.uid, xId: xId, result: null }
                     });
-
-                    // 部屋の監視開始
                     watchRoom(roomRef.id);
-
                 } else {
-                    // ★誰もいない（待機列に並ぶ）
                     const ref = await addDoc(collection(db, "waiting_room"), {
-                        uid: currentUser.uid,
-                        mode: mode,
-                        xId: xId,
-                        rate: 1500,
-                        createdAt: new Date()
+                        uid: currentUser.uid, mode: mode, xId: xId, rate: currentRate, createdAt: new Date()
                     });
                     waitingDocId = ref.id;
-                    document.getElementById('match-status').innerText = "対戦相手の参加を待っています...";
-
-                    // 自分がplayer1として登録された部屋ができるのを待つ
+                    document.getElementById('match-status').innerText = "対戦相手を待っています...";
                     const roomQ = query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid));
-                    unsubscribeRoom = onSnapshot(roomQ, (snap) => {
-                        snap.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                waitingDocId = null; // もう並んでない
-                                unsubscribeRoom(); // このリスナーは終了
-                                watchRoom(change.doc.id); // 部屋の監視へ移行
+                    unsubscribeRoom = onSnapshot(roomQ, snap => {
+                        snap.docChanges().forEach(c => {
+                            if(c.type === "added") {
+                                waitingDocId = null; unsubscribeRoom(); watchRoom(c.doc.id);
                             }
                         });
                     });
                 }
-            } catch(e) {
-                console.error(e);
-                alert("エラーが発生しました");
-                location.reload();
-            }
+            } catch(e) { console.error(e); alert("エラー"); location.reload(); }
         };
 
-        // --- 2. 部屋の監視と進行 ---
+        // --- 部屋監視 ---
         const watchRoom = (roomId) => {
             currentRoomId = roomId;
-            // 部屋のデータの変更をリアルタイム監視
             unsubscribeRoom = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
-                if (!docSnap.exists()) return;
+                if(!docSnap.exists()) return;
                 const data = docSnap.data();
-                
-                // 自分の役割判定 (player1 か player2 か)
                 const isP1 = data.player1.uid === currentUser.uid;
                 const me = isP1 ? data.player1 : data.player2;
                 const opponent = isP1 ? data.player2 : data.player1;
+                
+                currentMatchData = { me, opponent, songs: data.songs, isP1 };
 
-                currentMatchData = { me, opponent, songs: data.songs };
-
-                // 状態1: まだ結果画面にいないなら、曲発表へ
-                if (document.getElementById('reveal-screen').style.display !== 'flex' && 
-                    document.getElementById('report-screen').style.display !== 'flex' &&
-                    document.getElementById('result-screen').style.display !== 'flex') {
-                    
-                    startRevealSequence(opponent, data.songs);
-                }
-
-                // 状態2: 両方の結果が出揃ったかチェック
-                if (data.player1.result && data.player2.result) {
-                    finalizeResult(data.player1.result, data.player2.result, isP1);
+                // 画面遷移ロジック
+                // 1. まだ開始演出前なら演出へ
+                const screens = ['reveal-screen', 'report-screen', 'waiting-result-screen', 'final-result-screen'];
+                const currentScreenId = screens.find(id => document.getElementById(id).classList.contains('active'));
+                
+                if (!currentScreenId) {
+                    startReveal(opponent, data.songs);
+                } 
+                // 2. 結果報告後の待機中に、両者の結果が出揃ったら判定へ
+                else if (currentScreenId === 'waiting-result-screen') {
+                    if (data.player1.result && data.player2.result) {
+                        checkAndFinalize(data.player1.result, data.player2.result, isP1);
+                    }
                 }
             });
         };
 
-        // --- 3. 演出：曲発表 ---
-        const startRevealSequence = async (opponent, songs) => {
+        // --- 演出 ---
+        const startReveal = async (opponent, songs) => {
             window.switchScreen('reveal-screen');
-            document.getElementById('opponent-x-display').innerText = opponent.xId || "No ID";
-            
-            const container = document.getElementById('song-reveal-container');
-            container.innerHTML = ""; // リセット
-
-            // 1曲ずつアニメーション表示
-            for (let i = 0; i < songs.length; i++) {
-                await new Promise(r => setTimeout(r, 800)); // 0.8秒待機
-                
-                const div = document.createElement('div');
-                div.className = 'song-reveal-item';
-                div.innerHTML = `<span class="song-badge">${i+1}曲目</span> ${songs[i]}`;
-                container.appendChild(div);
-                
-                // 少し遅れて表示クラス付与（スライドイン）
-                setTimeout(() => div.classList.add('show'), 50);
+            document.getElementById('opponent-x-display').innerText = opponent.xId;
+            const con = document.getElementById('song-reveal-container');
+            con.innerHTML = "";
+            for(let i=0; i<songs.length; i++){
+                await new Promise(r=>setTimeout(r,800));
+                const d = document.createElement('div');
+                d.className = 'song-reveal-item';
+                d.innerHTML = `<span class="song-badge">${i+1}曲目</span> ${songs[i]}`;
+                con.appendChild(d);
+                setTimeout(()=>d.classList.add('show'),50);
             }
-
-            // 全部出たらボタン表示
-            await new Promise(r => setTimeout(r, 500));
-            document.getElementById('goto-report-btn').classList.add('show');
+            await new Promise(r=>setTimeout(r,500));
+            document.getElementById('goto-report-btn').style.display = 'inline-block';
         };
 
-        // --- 4. 申告画面へ ---
         window.goToReportScreen = () => {
             window.switchScreen('report-screen');
-            // 情報セット
-            document.getElementById('report-opponent-name').innerText = "ID: " + currentMatchData.opponent.uid.substring(0,4);
-            document.getElementById('report-opponent-x').innerText = currentMatchData.opponent.xId;
-            
-            const list = document.getElementById('report-song-list');
-            list.innerHTML = "";
-            currentMatchData.songs.forEach(s => {
-                const li = document.createElement('li');
-                li.innerText = s;
-                list.appendChild(li);
-            });
+            document.getElementById('rep-opp-name').innerText = currentMatchData.opponent.xId;
+            document.getElementById('rep-song-1').innerText = currentMatchData.songs[0];
         };
 
-        // --- 5. 結果選択と確認 ---
-        window.confirmResult = (result) => {
-            selectedResult = result;
-            const textMap = { 'WIN': '勝ち', 'LOSE': '負け', 'DRAW': '引き分け' };
-            document.getElementById('modal-selection').innerText = textMap[result];
+        // --- 結果報告 ---
+        window.confirmResult = (res) => {
+            selectedResult = res;
+            const map = { 'WIN':'勝ち', 'LOSE':'負け', 'DRAW':'引分' };
+            document.getElementById('modal-selection').innerText = map[res];
             document.getElementById('confirm-modal').style.display = 'flex';
         };
+        window.closeModal = () => document.getElementById('confirm-modal').style.display = 'none';
 
-        window.closeModal = () => {
-            document.getElementById('confirm-modal').style.display = 'none';
-        };
-
-        // --- 6. 結果送信 ---
         window.submitResult = async () => {
             closeModal();
-            window.switchScreen('result-screen'); // 待機画面へ
-
-            // DB更新
-            // 自分がPlayer1ならplayer1フィールドを更新、Player2ならplayer2フィールドを更新
-            const isP1 = currentMatchData.me.uid === currentUser.uid; // ここで再確認
-            const updateField = isP1 ? "player1.result" : "player2.result";
-
-            await updateDoc(doc(db, "rooms", currentRoomId), {
-                [updateField]: selectedResult
-            });
+            window.switchScreen('waiting-result-screen'); // 待機画面へ
+            const field = currentMatchData.isP1 ? "player1.result" : "player2.result";
+            await updateDoc(doc(db, "rooms", currentRoomId), { [field]: selectedResult });
         };
 
-        // --- 7. 最終判定ロジック ---
-        const finalizeResult = (p1Res, p2Res, amIP1) => {
-            window.switchScreen('result-screen');
-            const loader = document.getElementById('result-loader');
-            const title = document.getElementById('result-title');
-            const msg = document.getElementById('result-message');
-            const backBtn = document.getElementById('back-to-title');
-
-            // 自分の結果と相手の結果
+        // --- 判定ロジック ---
+        const checkAndFinalize = (p1Res, p2Res, amIP1) => {
             const myRes = amIP1 ? p1Res : p2Res;
             const oppRes = amIP1 ? p2Res : p1Res;
 
-            let isValid = false;
-            let finalState = "";
+            let valid = false;
+            if (myRes === 'WIN' && oppRes === 'LOSE') valid = true;
+            if (myRes === 'LOSE' && oppRes === 'WIN') valid = true;
+            if (myRes === 'DRAW' && oppRes === 'DRAW') valid = true;
 
-            // 整合性チェック
-            if (myRes === 'WIN' && oppRes === 'LOSE') isValid = true;
-            if (myRes === 'LOSE' && oppRes === 'WIN') isValid = true;
-            if (myRes === 'DRAW' && oppRes === 'DRAW') isValid = true;
-
-            loader.style.display = "none";
-            backBtn.style.display = "inline-block";
-
-            if (isValid) {
-                // 成功
-                title.innerText = "勝負あり！";
-                title.style.color = "#e91e63";
-                
-                if (myRes === 'WIN') msg.innerHTML = "おめでとうございます！<br>あなたの<span style='font-size:1.5rem;color:red'>勝ち</span>です！";
-                else if (myRes === 'LOSE') msg.innerHTML = "残念...<br>あなたの<span style='font-size:1.5rem;color:blue'>負け</span>です。";
-                else msg.innerHTML = "熱い戦いでした！<br><span style='font-size:1.5rem;color:purple'>引き分け</span>です。";
-                
-                // ここでレート変動処理などを入れる
+            if (valid) {
+                // 正常終了 → 結果画面へ
+                showFinalResult(myRes);
             } else {
-                // 不整合（例：どっちも勝ちと言っている）
-                title.innerText = "結果不一致";
-                title.style.color = "black";
-                msg.innerHTML = `結果が食い違っています。<br>自分: ${myRes} / 相手: ${oppRes}<br>もう一度申告し直してください。`;
-                
-                // ボタンを「やり直し」に変える
-                backBtn.innerText = "申告画面に戻る";
-                backBtn.onclick = () => {
-                    // DBの結果をリセットする必要があるが、簡易的に画面だけ戻す
-                    // 本格的にはトランザクション処理が必要
-                    window.goToReportScreen();
-                };
+                // 不一致 → エラーモーダルを表示
+                document.getElementById('error-modal').style.display = 'flex';
             }
         };
 
-        // キャンセル処理
+        window.retryReport = () => {
+            document.getElementById('error-modal').style.display = 'none';
+            // 申告画面に戻す
+            window.switchScreen('report-screen');
+            // 注意: DBは上書きすればいいので、ここでは何もしなくてOK
+            // 相手も同じ画面が出ているので、両者が再送信するとまた判定が走る
+        };
+
+        // --- 結果発表とアニメーション ---
+        const showFinalResult = (result) => {
+            // リスナー解除（もう更新不要なので）
+            if(unsubscribeRoom) unsubscribeRoom();
+            unsubscribeRoom = null;
+
+            window.switchScreen('final-result-screen');
+            const title = document.getElementById('final-title');
+            const msg = document.getElementById('final-message');
+            const rateVal = document.getElementById('anim-rate-val');
+            const rateDiff = document.getElementById('anim-rate-diff');
+
+            let endRate = currentRate;
+            let diffText = "+0";
+            let colorClass = "";
+
+            if(result === 'WIN') {
+                title.innerText = "YOU WIN!";
+                title.className = "result-title win-color";
+                msg.innerText = "素晴らしい演奏でした！";
+                endRate += 20; // 勝ちで+20
+                diffText = "+20";
+                rateDiff.style.color = "#e91e63";
+            } else if(result === 'LOSE') {
+                title.innerText = "YOU LOSE...";
+                title.className = "result-title lose-color";
+                msg.innerText = "次はリベンジしましょう。";
+                endRate -= 20; // 負けで-20
+                diffText = "-20";
+                rateDiff.style.color = "#2196f3";
+            } else {
+                title.innerText = "DRAW";
+                title.className = "result-title draw-color";
+                msg.innerText = "互角の勝負でした。";
+                endRate += 0;
+                diffText = "±0";
+                rateDiff.style.color = "#9c27b0";
+            }
+
+            // アニメーション実行
+            rateVal.innerText = currentRate;
+            rateDiff.innerText = diffText;
+            
+            setTimeout(() => {
+                rateDiff.classList.add('show'); // 差分を表示
+                animateValue(rateVal, currentRate, endRate, 1500); // 数字をカウント
+            }, 500);
+        };
+
+        // 数字カウントアップ用関数
+        const animateValue = (obj, start, end, duration) => {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end; // 最後に正確な値に
+                }
+            };
+            window.requestAnimationFrame(step);
+        };
+
         window.cancelMatching = async () => {
             if(waitingDocId) await deleteDoc(doc(db, "waiting_room", waitingDocId));
             if(unsubscribeRoom) unsubscribeRoom();
