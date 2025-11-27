@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太鼓レーティングマッチ</title>
     <style>
-        /* ここからデザイン設定（CSS） */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        /* CSSは前回と同じ + マッチング画面用を追加 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-            background-color: #fce4d6; /* 薄い和紙っぽい色 */
-            background-image: radial-gradient(#ffccbc 10%, transparent 10%); /* 水玉模様 */
+            background-color: #fce4d6;
+            background-image: radial-gradient(#ffccbc 10%, transparent 10%);
             background-size: 20px 20px;
             display: flex;
             justify-content: center;
@@ -23,8 +18,6 @@
             height: 100vh;
             color: #333;
         }
-
-        /* ゲーム画面の枠 */
         .game-container {
             background: #fff;
             width: 100%;
@@ -34,130 +27,187 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             text-align: center;
             border: 4px solid #ff5722;
-        }
-
-        /* タイトル周り */
-        .title-section h1 {
-            font-size: 2.5rem;
-            color: #ff5722;
-            text-shadow: 2px 2px 0px #ffe0b2;
-            margin-bottom: 5px;
-            font-weight: 900;
-        }
-
-        .title-section p {
-            color: #f57c00;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-
-        /* プレイヤー情報（レート表示） */
-        .player-info {
-            background: #333;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            margin-bottom: 40px;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #000;
-        }
-
-        .player-rate {
-            margin-left: 15px;
-            color: #ffd700; /* 金色 */
-        }
-
-        /* ボタンエリア */
-        .select-text {
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        .mode-select {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* 共通ボタンデザイン */
-        .match-btn {
-            border: none;
-            padding: 20px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
             position: relative;
-            overflow: hidden;
-            width: 100%; /* 幅いっぱいに */
+            min-height: 500px; /* 高さを固定して画面遷移でガタつかないように */
+        }
+        .title-section h1 { font-size: 2.5rem; color: #ff5722; text-shadow: 2px 2px 0px #ffe0b2; margin-bottom: 5px; font-weight: 900; }
+        .title-section p { color: #f57c00; font-weight: bold; margin-bottom: 30px; }
+        .player-info { background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; display: inline-block; margin-bottom: 40px; font-weight: bold; box-shadow: 0 4px 0 #000; }
+        .player-rate { margin-left: 15px; color: #ffd700; }
+        .select-text { margin-bottom: 15px; font-weight: bold; }
+        .mode-select { display: flex; flex-direction: column; gap: 20px; }
+        .match-btn { border: none; padding: 20px; border-radius: 15px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; position: relative; overflow: hidden; width: 100%; }
+        .match-btn:active { transform: translateY(4px); box-shadow: none !important; }
+        .difficulty-range { font-size: 1.5rem; display: block; }
+        .btn-label { font-size: 0.9rem; opacity: 0.9; }
+        .mode-normal { background: linear-gradient(135deg, #42a5f5, #1e88e5); box-shadow: 0 6px 0 #1565c0; }
+        .mode-hard { background: linear-gradient(135deg, #ef5350, #c62828); box-shadow: 0 6px 0 #b71c1c; }
+
+        /* --- ここから追加：画面切り替え用のスタイル --- */
+        .screen {
+            display: none; /* デフォルトで非表示 */
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .screen.active {
+            display: flex; /* activeクラスがつくと表示 */
         }
 
-        .match-btn:active {
-            transform: translateY(4px);
-            box-shadow: none !important;
+        /* マッチング待機画面 */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #ff5722;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
         }
-
-        .difficulty-range {
-            font-size: 1.5rem;
-            display: block;
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .waiting-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 20px;
         }
-
-        .btn-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        /* モード別色分け */
-        /* F-A+ ボタン（青～緑系） */
-        .mode-normal {
-            background: linear-gradient(135deg, #42a5f5, #1e88e5);
-            box-shadow: 0 6px 0 #1565c0;
-        }
-
-        /* S-SS ボタン（赤～紫系） */
-        .mode-hard {
-            background: linear-gradient(135deg, #ef5350, #c62828);
-            box-shadow: 0 6px 0 #b71c1c;
+        .cancel-btn {
+            background: #999;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        <header class="title-section">
-            <h1>DON-DER MATCH</h1>
-            <p>Random Song Rating Battle</p>
-        </header>
+        
+        <div id="title-screen" class="screen active">
+            <header class="title-section">
+                <h1>DON-DER MATCH</h1>
+                <p>Random Song Rating Battle</p>
+            </header>
 
-        <div class="player-info">
-            <span class="player-name">Player 1</span>
-            <span class="player-rate">Rate: <span id="current-rate">1500</span></span>
+            <div class="player-info">
+                <span class="player-name">Player</span>
+                <span class="player-rate">Rate: <span id="current-rate">1500</span></span>
+            </div>
+
+            <div class="mode-select">
+                <p class="select-text">対戦モードを選択してください</p>
+                
+                <button class="match-btn mode-normal" onclick="startMatching('normal')">
+                    <span class="difficulty-range">難易度 F ～ A+</span>
+                    <span class="btn-label">で対戦する</span>
+                </button>
+
+                <button class="match-btn mode-hard" onclick="startMatching('hard')">
+                    <span class="difficulty-range">難易度 S ～ SS</span>
+                    <span class="btn-label">で対戦する</span>
+                </button>
+            </div>
         </div>
 
-        <div class="mode-select">
-            <p class="select-text">対戦モードを選択してください</p>
-            
-            <button class="match-btn mode-normal">
-                <span class="difficulty-range">難易度 F ～ A+</span>
-                <span class="btn-label">で対戦する</span>
-            </button>
-
-            <button class="match-btn mode-hard">
-                <span class="difficulty-range">難易度 S ～ SS</span>
-                <span class="btn-label">で対戦する</span>
-            </button>
+        <div id="matching-screen" class="screen">
+            <div class="loader"></div>
+            <p class="waiting-text">対戦相手を探しています...</p>
+            <p id="match-mode-display" style="margin-bottom:10px; color:#ff5722; font-weight:bold;"></p>
+            <button class="cancel-btn" onclick="cancelMatching()">キャンセル</button>
         </div>
+
     </div>
 
-    <script>
-        // ここに動き（JavaScript）を書きます
-        console.log("Title Screen Loaded");
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ★★★ここに手順1でコピーしたあなたの設定を貼り付けます★★★
+        const firebaseConfig = {
+  apiKey: "AIzaSyBU1LAF6ceIsezKarsiecSTbH87Cb3gnTw",
+  authDomain: "taikorating.firebaseapp.com",
+  projectId: "taikorating",
+  storageBucket: "taikorating.firebasestorage.app",
+  messagingSenderId: "657970223088",
+  appId: "1:657970223088:web:509230d6b20d78cbf3af35",
+  measurementId: "G-PJXEXL5E9M"
+};
+
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUser = null;
+        let waitingDocId = null; // 自分の待機データのID
+
+        // サイトを開いたら自動で匿名ログイン
+        signInAnonymously(auth).catch((error) => {
+            console.error("ログインエラー:", error);
+        });
+
+        // ログイン状態の監視
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Logged in as:", user.uid);
+                document.querySelector('.player-name').innerText = "Player: " + user.uid.substring(0, 4); // IDの最初だけ表示
+            }
+        });
+
+        // 画面切り替え関数
+        window.switchScreen = (screenId) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // マッチング開始処理
+        window.startMatching = async (mode) => {
+            if (!currentUser) return alert("通信接続中です。少々お待ちください。");
+
+            // 画面を切り替え
+            document.getElementById('match-mode-display').innerText = 
+                (mode === 'normal' ? "【難易度 F～A+】" : "【難易度 S～SS】");
+            switchScreen('matching-screen');
+
+            try {
+                // データベースの 'waiting_room' コレクションに自分を追加
+                // 実際はここで「既に待っている人がいるか検索」→「いれば対戦成立」という処理が入ります
+                // 今回はまず「自分が待機列に並ぶ」ところまで
+                const docRef = await addDoc(collection(db, "waiting_room"), {
+                    uid: currentUser.uid,
+                    mode: mode,
+                    rate: 1500, // 仮のレート
+                    createdAt: new Date()
+                });
+                
+                waitingDocId = docRef.id;
+                console.log("待機列に参加しました。ID:", waitingDocId);
+
+                // ここで「対戦相手が見つかったか」を監視する処理を後で書きます
+
+            } catch (e) {
+                console.error("マッチングエラー:", e);
+                alert("エラーが発生しました");
+                switchScreen('title-screen');
+            }
+        };
+
+        // キャンセル処理
+        window.cancelMatching = async () => {
+            if (waitingDocId) {
+                // データベースから削除
+                await deleteDoc(doc(db, "waiting_room", waitingDocId));
+                waitingDocId = null;
+            }
+            switchScreen('title-screen');
+        };
     </script>
 </body>
 </html>
