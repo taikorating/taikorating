@@ -30,7 +30,7 @@
             transition: all 0.3s ease;
             margin: 0 auto;
             height: auto; 
-            z-index: 10; /* 紙吹雪より手前に */
+            z-index: 10;
         }
 
         .game-container.pc-mode {
@@ -114,74 +114,15 @@
         .instruction-box { background: #e3f2fd; border: 2px solid #2196f3; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #0d47a1; margin-bottom: 15px; text-align: left; }
 
         /* --- 豪華演出用スタイル --- */
-        #confetti-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; display: none;
-        }
-
-        .result-container {
-            margin: 20px 0;
-            padding: 20px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 0 30px rgba(255, 87, 34, 0.2);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* WINの豪華文字 */
-        .result-text-win {
-            font-size: 4rem;
-            font-weight: 900;
-            color: #ffd700;
-            text-shadow: 
-                0 0 0px #fff,
-                0 0 10px #ffeb3b,
-                2px 2px 0px #f57f17;
-            animation: pulse 1s infinite alternate;
-            margin: 0;
-            line-height: 1;
-        }
-        @keyframes pulse { from { transform: scale(1); text-shadow: 0 0 10px #ffeb3b; } to { transform: scale(1.05); text-shadow: 0 0 20px #ffeb3b, 0 0 40px #ffca28; } }
-
-        /* LOSEの文字 */
-        .result-text-lose {
-            font-size: 3rem;
-            color: #5c6bc0;
-            text-shadow: 2px 2px 0px #3949ab;
-            animation: shake 0.5s;
-        }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; display: none; }
+        .result-container { margin: 20px 0; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.9); box-shadow: 0 0 30px rgba(255, 87, 34, 0.2); animation: popIn 0.5s; }
+        .result-text-win { font-size: 4rem; font-weight: 900; color: #ffd700; text-shadow: 0 0 10px #ffeb3b, 2px 2px 0px #f57f17; animation: pulse 1s infinite alternate; margin: 0; line-height: 1; }
+        .result-text-lose { font-size: 3rem; color: #5c6bc0; text-shadow: 2px 2px 0px #3949ab; animation: shake 0.5s; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
         @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
-
-        /* レート表示 */
-        .rate-box {
-            background: #222;
-            color: #fff;
-            padding: 15px 30px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 20px;
-            box-shadow: inset 0 0 10px #000;
-            position: relative;
-        }
-        .rate-value {
-            font-size: 2.5rem;
-            font-weight: 900;
-            font-variant-numeric: tabular-nums; /* 数字の幅を等しく */
-            color: #ffd700;
-        }
-        .rate-diff {
-            font-size: 1.2rem;
-            position: absolute;
-            top: -15px;
-            right: -10px;
-            background: #ff5722;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 5px;
-            font-weight: bold;
-            opacity: 0;
-            transition: all 0.5s ease 1s; /* 1秒後に表示 */
-            transform: translateY(10px);
-        }
+        .rate-box { background: #222; color: #fff; padding: 15px 30px; border-radius: 10px; display: inline-block; margin-top: 20px; box-shadow: inset 0 0 10px #000; position: relative; }
+        .rate-value { font-size: 2.5rem; font-weight: 900; font-variant-numeric: tabular-nums; color: #ffd700; }
+        .rate-diff { font-size: 1.2rem; position: absolute; top: -15px; right: -10px; background: #ff5722; color: white; padding: 2px 8px; border-radius: 5px; font-weight: bold; opacity: 0; transition: all 0.5s ease 1s; transform: translateY(10px); }
         .rate-diff.show { opacity: 1; transform: translateY(0); }
         .rate-diff.plus { background: #e91e63; }
         .rate-diff.minus { background: #2196f3; }
@@ -297,7 +238,6 @@
             <div class="result-container">
                 <h1 id="final-title">WIN!</h1>
                 <p id="final-message" style="margin-bottom:15px; font-weight:bold;"></p>
-                
                 <div class="rate-box">
                     <div class="rate-value" id="anim-rate-val">1500</div>
                     <div class="rate-diff" id="anim-rate-diff">+20</div>
@@ -419,7 +359,6 @@
             ]
         };
 
-        // --- Wake Lock ---
         const requestWakeLock = async () => {
             try {
                 if ('wakeLock' in navigator) {
@@ -432,14 +371,12 @@
             if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
         });
 
-        // --- タブ閉じ検知 ---
         const handleUnload = () => {
             if (currentRoomId && currentUser) deleteDoc(doc(db, "rooms", currentRoomId)).catch(()=>{});
             if (waitingDocId) deleteDoc(doc(db, "waiting_room", waitingDocId)).catch(()=>{});
         };
         window.addEventListener('beforeunload', handleUnload);
 
-        // --- View Mode ---
         window.setViewMode = (mode) => {
             const container = document.getElementById('main-container');
             const btnMobile = document.getElementById('btn-mobile');
@@ -458,7 +395,6 @@
         if (savedMode) window.setViewMode(savedMode);
         else window.setViewMode('mobile');
 
-        // --- Auth ---
         window.loginAnon = () => signInAnonymously(auth).catch(e => alert(e.message));
         window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => alert(e.message));
         window.loginWithEmail = async () => {
@@ -484,7 +420,6 @@
                     }
                     updateProfileUI();
                     switchScreen('title-screen');
-                    
                     const savedRoomId = localStorage.getItem('current_room_id');
                     if (savedRoomId) checkRestore(savedRoomId);
                 } catch(e) { console.error(e); switchScreen('title-screen'); }
@@ -580,7 +515,6 @@
                 if(opponentDoc) {
                     const opp = opponentDoc.data();
                     await deleteDoc(doc(db, "waiting_room", opponentDoc.id));
-                    // ★重要: ルーム作成時にレート(rate)も保存する（計算用）
                     const roomRef = await addDoc(collection(db, "rooms"), {
                         mode: mode, songs: pickRandomSongs(mode), createdAt: new Date(),
                         player1: { uid: opp.uid, xId: opp.xId, displayName: opp.displayName, rate: opp.rate, result: null, lastSeen: Date.now() },
@@ -655,9 +589,9 @@
                 const me = isP1 ? data.player1 : data.player2;
                 const opponent = isP1 ? data.player2 : data.player1;
                 
-                currentMatchData = { me, opponent, songs: data.songs, isP1 };
+                currentMatchData = { me, opponent, songs: data.songs, isP1, createdAt: data.createdAt }; // createdAt追加
 
-                // 13分(780秒)タイムアウト
+                // 切断検知 (780秒 = 13分)
                 const now = Date.now();
                 if (opponent.lastSeen && (now - opponent.lastSeen > 780000)) { 
                     deleteDoc(doc(db, "rooms", roomId)).catch(()=>{});
@@ -725,6 +659,16 @@
         };
 
         window.confirmResult = (res) => {
+            // ★ここに5分制限を追加
+            const now = Date.now();
+            const startTime = currentMatchData.createdAt ? currentMatchData.createdAt.toMillis() : now;
+            const elapsed = now - startTime;
+
+            if (elapsed < 300000) { // 300,000ms = 5分
+                alert("異常を検知しました。\n3曲とも演奏してから結果申告してください");
+                return;
+            }
+
             selectedResult = res;
             const map = { 'WIN':'勝ち', 'LOSE':'負け', 'DRAW':'引分' };
             document.getElementById('modal-selection').innerText = map[res];
@@ -756,23 +700,16 @@
                 if(heartbeatTimer) clearInterval(heartbeatTimer);
                 if(wakeLock) wakeLock.release().catch(()=>{});
                 
-                // ★ Elo Rating Calculation ★
                 const K = 32;
                 const myRate = Number(currentMatchData.me.rate) || 1500;
                 const oppRate = Number(currentMatchData.opponent.rate) || 1500;
-                
-                // 期待勝率の計算
                 const expected = 1 / (1 + Math.pow(10, (oppRate - myRate) / 400));
                 
                 let actualScore = 0;
                 if (myRes === 'WIN') actualScore = 1;
                 else if (myRes === 'DRAW') actualScore = 0.5;
-                // else LOSE = 0
 
-                // 変動値
                 let diff = Math.round(K * (actualScore - expected));
-                
-                // 計算結果が0の場合でも、勝ったら最低+1、負けたら最低-1にする調整
                 if (diff === 0 && myRes === 'WIN') diff = 1;
                 if (diff === 0 && myRes === 'LOSE') diff = -1;
 
@@ -796,7 +733,6 @@
             goToReportScreen();
         };
 
-        // --- 豪華演出機能 ---
         const triggerConfetti = () => {
             const canvas = document.getElementById('confetti-canvas');
             const ctx = canvas.getContext('2d');
@@ -830,7 +766,7 @@
                 requestAnimationFrame(draw);
             }
             draw();
-            setTimeout(() => { canvas.style.display = 'none'; }, 5000); // 5秒で停止
+            setTimeout(() => { canvas.style.display = 'none'; }, 5000); 
         };
 
         const showFinalResult = (result, diff, currentRate) => {
@@ -839,30 +775,23 @@
             const msg = document.getElementById('final-message');
             const diffEl = document.getElementById('anim-rate-diff');
             
-            diffEl.className = "rate-diff"; // リセット
+            diffEl.className = "rate-diff"; 
             if(result === 'WIN') {
-                title.innerText = "WIN!"; 
-                title.className = "result-text-win";
+                title.innerText = "WIN!"; title.className = "result-text-win";
                 msg.innerText = "おめでとうございます！";
-                diffEl.innerText = "+" + diff; 
-                diffEl.classList.add("plus");
-                triggerConfetti(); // 紙吹雪発射
+                diffEl.innerText = "+" + diff; diffEl.classList.add("plus");
+                triggerConfetti(); 
             } else if(result === 'LOSE') {
-                title.innerText = "LOSE..."; 
-                title.className = "result-text-lose";
+                title.innerText = "LOSE..."; title.className = "result-text-lose";
                 msg.innerText = "ドンマイ！次こそは！";
-                diffEl.innerText = diff; 
-                diffEl.classList.add("minus");
+                diffEl.innerText = diff; diffEl.classList.add("minus");
             } else {
-                title.innerText = "DRAW"; 
-                title.className = ""; 
-                title.style.color = "#9c27b0";
+                title.innerText = "DRAW"; title.className = ""; title.style.color = "#9c27b0";
                 msg.innerText = "熱い戦いでした！";
                 diffEl.innerText = (diff >= 0 ? "+" : "") + diff;
                 diffEl.style.background = "#9c27b0";
             }
 
-            // ドラムロール演出
             const rateValEl = document.getElementById('anim-rate-val');
             const startRate = currentRate - diff;
             const duration = 1500;
@@ -871,22 +800,18 @@
             function updateRate(currentTime) {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                // easeOutExpo
                 const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-                
                 const val = Math.floor(startRate + diff * ease);
                 rateValEl.innerText = val;
-
                 if(progress < 1) requestAnimationFrame(updateRate);
                 else {
                     rateValEl.innerText = currentRate;
-                    diffEl.classList.add('show'); // 最後に増減値を表示
+                    diffEl.classList.add('show'); 
                 }
             }
             requestAnimationFrame(updateRate);
         };
 
-        // --- 退出ロジック ---
         window.tryExitRoom = () => {
             document.getElementById('exit-confirm-modal-1').style.display = 'flex';
         };
