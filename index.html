@@ -324,7 +324,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, deleteDoc, doc, updateDoc, limit, getDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ★★★ APIキーを貼り付けてください ★★★
-        const firebaseConfig = 
+        const firebaseConfig =   {
   apiKey: "AIzaSyBU1LAF6ceIsezKarsiecSTbH87Cb3gnTw",
   authDomain: "taikorating.firebaseapp.com",
   projectId: "taikorating",
@@ -499,6 +499,7 @@
             switchScreen('matching-screen');
             document.getElementById('match-status').innerText = "対戦相手を待っています...";
             try {
+                // 安全マージン: 60秒以上経過した古いデータを削除
                 const q = query(collection(db, "waiting_room"), where("mode", "==", mode), limit(20));
                 const snap = await getDocs(q);
                 let opponentDoc = null;
@@ -508,18 +509,23 @@
                     const data = d.data();
                     const elapsed = data.createdAt ? (now - data.createdAt.toMillis()) : 99999;
                     if (elapsed > 60000) { deleteDoc(doc(db, "waiting_room", d.id)).catch(()=>{}); continue; }
-                    if (elapsed > 55000) { continue; } // マージン
+                    if (elapsed > 55000) { continue; } // 安全マージン
                     if(data.uid !== currentUser.uid) { opponentDoc = d; break; }
                 }
 
                 if(opponentDoc) {
+                    // ★ 順番変更: 先に部屋を作る！
                     const opp = opponentDoc.data();
-                    await deleteDoc(doc(db, "waiting_room", opponentDoc.id));
+                    
                     const roomRef = await addDoc(collection(db, "rooms"), {
                         mode: mode, songs: pickRandomSongs(mode), createdAt: new Date(),
                         player1: { uid: opp.uid, xId: opp.xId, displayName: opp.displayName, rate: opp.rate, result: null, lastSeen: Date.now() },
                         player2: { uid: currentUser.uid, xId: userData.xId, displayName: userData.displayName, rate: userData.rate, result: null, lastSeen: Date.now() }
                     });
+                    
+                    // その後に削除
+                    await deleteDoc(doc(db, "waiting_room", opponentDoc.id));
+
                     localStorage.setItem('current_room_id', roomRef.id);
                     requestWakeLock();
                     startHeartbeat(roomRef.id);
@@ -534,16 +540,15 @@
                     if(matchTimer) clearTimeout(matchTimer);
                     matchTimer = setTimeout(async () => {
                         if(waitingDocId) {
-                            // ★ 念のため最後の確認
                             if(unsubscribeRoom) unsubscribeRoom();
                             unsubscribeRoom = null;
                             
-                            // 既に部屋ができている可能性をチェック
-                            const lastCheck = await getDocs(query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid)));
-                            if (!lastCheck.empty) {
-                                // 部屋があった！キャンセル中止して参加
-                                const roomDoc = lastCheck.docs[0];
-                                waitingDocId = null;
+                            // ★ 念のための最終確認: 自分のIDの部屋ができていないか？
+                            const me1 = await getDocs(query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid)));
+                            if(!me1.empty) {
+                                // 部屋発見！キャンセル中止
+                                const roomDoc = me1.docs[0];
+                                waitingDocId = null; // もう部屋にいるので待機IDは忘れる
                                 localStorage.setItem('current_room_id', roomDoc.id);
                                 requestWakeLock();
                                 startHeartbeat(roomDoc.id);
@@ -556,7 +561,7 @@
                             switchScreen('title-screen');
                             alert("【タイムアウト】\n一定時間マッチングしなかったため、\n自動キャンセルしました。");
                         }
-                    }, 60000); // 60秒
+                    }, 60000); // 60秒待機
 
                     const roomQ = query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid));
                     unsubscribeRoom = onSnapshot(roomQ, snap => {
@@ -606,7 +611,6 @@
                 
                 currentMatchData = { me, opponent, songs: data.songs, isP1, createdAt: data.createdAt };
 
-                // 切断検知
                 const now = Date.now();
                 if (opponent.lastSeen && (now - opponent.lastSeen > 780000)) { 
                     deleteDoc(doc(db, "rooms", roomId)).catch(()=>{});
