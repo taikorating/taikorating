@@ -182,7 +182,7 @@
             <div class="loader"></div>
             <h3>対戦相手を探しています...</h3>
             <p id="match-status" style="color:#ff5722; margin-top:10px; font-weight:bold;"></p>
-            <p style="font-size:0.8rem; color:#777; margin-top:5px;">※15秒経過すると自動キャンセルされます</p>
+            <p style="font-size:0.8rem; color:#777; margin-top:5px;">※約60秒経過すると自動キャンセルされます</p>
             <button class="btn btn-gray" style="margin-top:30px; width:50%;" onclick="cancelMatching()">キャンセル</button>
         </div>
 
@@ -324,7 +324,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, deleteDoc, doc, updateDoc, limit, getDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ★★★ APIキーを貼り付けてください ★★★
-        const firebaseConfig =   {
+        const firebaseConfig = 
   apiKey: "AIzaSyBU1LAF6ceIsezKarsiecSTbH87Cb3gnTw",
   authDomain: "taikorating.firebaseapp.com",
   projectId: "taikorating",
@@ -507,8 +507,8 @@
                 for (const d of snap.docs) {
                     const data = d.data();
                     const elapsed = data.createdAt ? (now - data.createdAt.toMillis()) : 99999;
-                    if (elapsed > 15000) { deleteDoc(doc(db, "waiting_room", d.id)).catch(()=>{}); continue; }
-                    if (elapsed > 12000) { continue; } // 安全マージン
+                    if (elapsed > 60000) { deleteDoc(doc(db, "waiting_room", d.id)).catch(()=>{}); continue; }
+                    if (elapsed > 55000) { continue; } // マージン
                     if(data.uid !== currentUser.uid) { opponentDoc = d; break; }
                 }
 
@@ -534,14 +534,29 @@
                     if(matchTimer) clearTimeout(matchTimer);
                     matchTimer = setTimeout(async () => {
                         if(waitingDocId) {
+                            // ★ 念のため最後の確認
                             if(unsubscribeRoom) unsubscribeRoom();
                             unsubscribeRoom = null;
+                            
+                            // 既に部屋ができている可能性をチェック
+                            const lastCheck = await getDocs(query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid)));
+                            if (!lastCheck.empty) {
+                                // 部屋があった！キャンセル中止して参加
+                                const roomDoc = lastCheck.docs[0];
+                                waitingDocId = null;
+                                localStorage.setItem('current_room_id', roomDoc.id);
+                                requestWakeLock();
+                                startHeartbeat(roomDoc.id);
+                                watchRoom(roomDoc.id);
+                                return;
+                            }
+
                             try { await deleteDoc(doc(db, "waiting_room", waitingDocId)); } catch(e){}
                             waitingDocId = null;
                             switchScreen('title-screen');
                             alert("【タイムアウト】\n一定時間マッチングしなかったため、\n自動キャンセルしました。");
                         }
-                    }, 15000); 
+                    }, 60000); // 60秒
 
                     const roomQ = query(collection(db, "rooms"), where("player1.uid", "==", currentUser.uid));
                     unsubscribeRoom = onSnapshot(roomQ, snap => {
@@ -589,9 +604,9 @@
                 const me = isP1 ? data.player1 : data.player2;
                 const opponent = isP1 ? data.player2 : data.player1;
                 
-                currentMatchData = { me, opponent, songs: data.songs, isP1, createdAt: data.createdAt }; // createdAt追加
+                currentMatchData = { me, opponent, songs: data.songs, isP1, createdAt: data.createdAt };
 
-                // 切断検知 (780秒 = 13分)
+                // 切断検知
                 const now = Date.now();
                 if (opponent.lastSeen && (now - opponent.lastSeen > 780000)) { 
                     deleteDoc(doc(db, "rooms", roomId)).catch(()=>{});
@@ -659,12 +674,11 @@
         };
 
         window.confirmResult = (res) => {
-            // ★ここに5分制限を追加
             const now = Date.now();
             const startTime = currentMatchData.createdAt ? currentMatchData.createdAt.toMillis() : now;
             const elapsed = now - startTime;
 
-            if (elapsed < 300000) { // 300,000ms = 5分
+            if (elapsed < 300000) { 
                 alert("異常を検知しました。\n3曲とも演奏してから結果申告してください");
                 return;
             }
