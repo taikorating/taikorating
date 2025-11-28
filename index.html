@@ -55,8 +55,21 @@
         /* --- 共通パーツ --- */
         h1, h2, h3 { font-weight: 900; }
         .title-logo { font-size: 2.2rem; color: #ff5722; text-shadow: 2px 2px 0px #ffe0b2; margin-bottom: 5px; }
-        .sub-title { color: #f57c00; font-weight: bold; margin-bottom: 20px; font-size: 0.9rem; }
+        .sub-title { color: #f57c00; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; }
         
+        /* 注意書きボックス */
+        .note-box {
+            background: #fff3e0;
+            border: 1px solid #ffe0b2;
+            color: #ef6c00;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            text-align: left;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
         button { font-family: inherit; outline: none; }
         .btn { border: none; padding: 12px; border-radius: 10px; cursor: pointer; transition: 0.1s; width: 100%; font-weight: bold; color: white; margin-bottom: 10px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); position: relative; top: 0;}
         .btn:active { top: 3px; box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
@@ -138,6 +151,12 @@
         <div id="login-screen" class="screen active center-content">
             <h1 class="title-logo">DON-DER MATCH</h1>
             <p class="sub-title">ログインして対戦を始めよう</p>
+            
+            <div class="note-box">
+                <strong>【推奨】</strong><br>
+                対戦時のやり取りで通知が増える可能性があるため、<br>通知欄を荒らしたくない場合は<strong>このサイト専用のXアカウント</strong>を用意することをおすすめします。
+            </div>
+
             <div class="login-btn-group" style="width: 100%;">
                 <button class="btn btn-google" onclick="loginWithGoogle()">Googleでログイン</button>
                 <button class="btn btn-x" onclick="alert('XログインにはAPI設定が必要です')">X (Twitter) でログイン</button>
@@ -201,7 +220,7 @@
             <div class="scrollable-content">
                 <div class="instruction-box">
                     <strong>【対戦手順】</strong><br>
-                    1. X ID宛にDM等でリザルトを交換<br>
+                    1. X ID宛にメンション等でリザルトを交換<br>
                     2. 3曲の良の合計数を比較<br>
                     3. 結果（勝ち・負け）を申告<br><br>
                     <span style="color:#d32f2f; font-size:0.8rem;">※アプリ切替等で通信が途切れても、<br>13分間は接続を維持します。</span>
@@ -255,6 +274,7 @@
                 <input type="text" id="edit-name" class="input-field" placeholder="例: どんちゃん">
                 <label class="input-label">X(Twitter) ID</label>
                 <p style="font-size:0.7rem; color:#e91e63; text-align:left;">※対戦には先頭に @ が必要です</p>
+                <p style="font-size:0.7rem; color:#777; text-align:left;">※通知が多いため専用アカウントを推奨</p>
                 <input type="text" id="edit-xid" class="input-field" placeholder="例: @taiko_master">
             </div>
             <div style="display:flex; gap:10px;">
@@ -324,7 +344,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, deleteDoc, doc, updateDoc, limit, getDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ★★★ APIキーを貼り付けてください ★★★
-        const firebaseConfig =   {
+        const firebaseConfig = {
   apiKey: "AIzaSyBU1LAF6ceIsezKarsiecSTbH87Cb3gnTw",
   authDomain: "taikorating.firebaseapp.com",
   projectId: "taikorating",
@@ -548,7 +568,7 @@
                             if(!me1.empty) {
                                 // 部屋発見！キャンセル中止
                                 const roomDoc = me1.docs[0];
-                                waitingDocId = null; // もう部屋にいるので待機IDは忘れる
+                                waitingDocId = null; 
                                 localStorage.setItem('current_room_id', roomDoc.id);
                                 requestWakeLock();
                                 startHeartbeat(roomDoc.id);
@@ -611,6 +631,7 @@
                 
                 currentMatchData = { me, opponent, songs: data.songs, isP1, createdAt: data.createdAt };
 
+                // 切断検知 (780秒 = 13分)
                 const now = Date.now();
                 if (opponent.lastSeen && (now - opponent.lastSeen > 780000)) { 
                     deleteDoc(doc(db, "rooms", roomId)).catch(()=>{});
