@@ -85,7 +85,6 @@
 
         .login-btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn-google { background: #db4437; }
-        .btn-x { background: #000; }
         .btn-email { background: #607d8b; }
         
         .profile-bar {
@@ -159,7 +158,6 @@
 
             <div class="login-btn-group" style="width: 100%;">
                 <button class="btn btn-google" onclick="loginWithGoogle()">Googleでログイン</button>
-                <button class="btn btn-x" onclick="alert('XログインにはAPI設定が必要です')">X (Twitter) でログイン</button>
                 <div style="display:flex; gap:5px;">
                     <input type="email" id="email-input" class="input-field" placeholder="メールアドレス" style="margin:0;">
                     <input type="password" id="pass-input" class="input-field" placeholder="パスワード" style="margin:0;">
@@ -353,6 +351,7 @@
   appId: "1:657970223088:web:509230d6b20d78cbf3af35",
   measurementId: "G-PJXEXL5E9M"
 };
+
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
