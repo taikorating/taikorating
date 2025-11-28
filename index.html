@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太鼓レーティングマッチ</title>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;900&display=swap" rel="stylesheet">
     <style>
         /* --- 基本リセット --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,6 +30,7 @@
             transition: all 0.3s ease;
             margin: 0 auto;
             height: auto; 
+            z-index: 10; /* 紙吹雪より手前に */
         }
 
         .game-container.pc-mode {
@@ -52,7 +53,7 @@
         }
 
         /* --- 共通パーツ --- */
-        h1, h2, h3 { font-weight: 800; }
+        h1, h2, h3 { font-weight: 900; }
         .title-logo { font-size: 2.2rem; color: #ff5722; text-shadow: 2px 2px 0px #ffe0b2; margin-bottom: 5px; }
         .sub-title { color: #f57c00; font-weight: bold; margin-bottom: 20px; font-size: 0.9rem; }
         
@@ -65,15 +66,8 @@
         .btn-gray { background: #757575; }
         .btn-red { background: #d32f2f; }
         
-        .view-toggle-box {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px dashed #ccc;
-        }
-        .view-btn {
-            background: transparent; border: 2px solid #aaa; color: #555;
-            padding: 5px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; margin: 0 5px;
-        }
+        .view-toggle-box { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ccc; }
+        .view-btn { background: transparent; border: 2px solid #aaa; color: #555; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; margin: 0 5px; }
         .view-btn.active { background: #555; color: white; border-color: #555; }
 
         .login-btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
@@ -114,14 +108,89 @@
         .input-label { display: block; text-align: left; font-weight: bold; margin-bottom: 5px; font-size: 0.8rem; color: #555; }
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid #ff5722; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .rate-diff { font-size: 1.5rem; opacity: 0; transition: 0.5s; display: block; height: 30px; }
-        .rate-diff.show { opacity: 1; transform: translateY(-5px); }
+        
         .song-list-box { text-align: left; margin: 10px 0; padding-left: 20px; font-weight: bold; color: #555; font-size: 0.9rem;}
         .song-list-item { margin-bottom: 5px; }
         .instruction-box { background: #e3f2fd; border: 2px solid #2196f3; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #0d47a1; margin-bottom: 15px; text-align: left; }
+
+        /* --- 豪華演出用スタイル --- */
+        #confetti-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; display: none;
+        }
+
+        .result-container {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 30px rgba(255, 87, 34, 0.2);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* WINの豪華文字 */
+        .result-text-win {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 
+                0 0 0px #fff,
+                0 0 10px #ffeb3b,
+                2px 2px 0px #f57f17;
+            animation: pulse 1s infinite alternate;
+            margin: 0;
+            line-height: 1;
+        }
+        @keyframes pulse { from { transform: scale(1); text-shadow: 0 0 10px #ffeb3b; } to { transform: scale(1.05); text-shadow: 0 0 20px #ffeb3b, 0 0 40px #ffca28; } }
+
+        /* LOSEの文字 */
+        .result-text-lose {
+            font-size: 3rem;
+            color: #5c6bc0;
+            text-shadow: 2px 2px 0px #3949ab;
+            animation: shake 0.5s;
+        }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
+
+        /* レート表示 */
+        .rate-box {
+            background: #222;
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 20px;
+            box-shadow: inset 0 0 10px #000;
+            position: relative;
+        }
+        .rate-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums; /* 数字の幅を等しく */
+            color: #ffd700;
+        }
+        .rate-diff {
+            font-size: 1.2rem;
+            position: absolute;
+            top: -15px;
+            right: -10px;
+            background: #ff5722;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.5s ease 1s; /* 1秒後に表示 */
+            transform: translateY(10px);
+        }
+        .rate-diff.show { opacity: 1; transform: translateY(0); }
+        .rate-diff.plus { background: #e91e63; }
+        .rate-diff.minus { background: #2196f3; }
+
     </style>
 </head>
 <body>
+
+    <canvas id="confetti-canvas"></canvas>
 
     <div id="main-container" class="game-container mobile-mode">
         
@@ -225,12 +294,16 @@
         </div>
 
         <div id="final-result-screen" class="screen center-content">
-            <h1 id="final-title" style="font-size:3rem; margin-bottom:10px;">WIN!</h1>
-            <div style="margin:20px 0;">
-                <div style="font-size:3rem; font-weight:900;" id="anim-rate-val">1500</div>
-                <div class="rate-diff" id="anim-rate-diff">+20</div>
+            <div class="result-container">
+                <h1 id="final-title">WIN!</h1>
+                <p id="final-message" style="margin-bottom:15px; font-weight:bold;"></p>
+                
+                <div class="rate-box">
+                    <div class="rate-value" id="anim-rate-val">1500</div>
+                    <div class="rate-diff" id="anim-rate-diff">+20</div>
+                </div>
             </div>
-            <button class="btn btn-gray" onclick="returnToTitle()">タイトルへ戻る</button>
+            <button class="btn btn-gray" style="margin-top:30px;" onclick="returnToTitle()">タイトルへ戻る</button>
         </div>
     </div>
 
@@ -311,7 +384,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, deleteDoc, doc, updateDoc, limit, getDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ★★★ APIキーを貼り付けてください ★★★
-        const firebaseConfig = {
+        const firebaseConfig =   {
   apiKey: "AIzaSyBU1LAF6ceIsezKarsiecSTbH87Cb3gnTw",
   authDomain: "taikorating.firebaseapp.com",
   projectId: "taikorating",
@@ -338,7 +411,7 @@
         let wakeLock = null; 
 
         const songDatabase = {
-           'normal': [
+            'normal': [
                 "アムピト◇リーテー","ouroboros -twin stroke of the end-","χ談","カラフル","彼は誰時の誘惑（裏）","ココドコ？多分ドッカ島！（裏）","コネクトカラーズ","GORI × GORI × SafaRI（裏）","万戈イム－一ノ十","青天の黎明","Central Dogma Pt.2","Taiko Drum Monster（表）","DEBSTEP!","Dreadnought（裏）","Don't Stop the Game","HARDCOREノ心得","幕末維新譚","†バチ!ムチ!?マッスルキングダム†","Hello, Worldooon!!（裏）","パン vs ごはん！ 大決戦！（裏）[達人]","ピッチフェイダ（裏）","for Q（裏）","プチポチ","Behemoth","まるくてはやくてすさまじいリズム","モノクロームユートピア","ラパスの虹（裏）","赤と白薔薇の魔女","あめふりのロンド（裏）","ON SAY GO SAY（裏）","カルメン組曲 一番終曲（裏）","森羅万象[開幕達人]","双竜ノ乱（裏）【双打】","デッド・オア・ダイ","23時54分、陽の旅路へのプレリュード（表）","にゃーにゃーにゃー","メタナイトの逆襲メドレー（裏）","8OROCHI（裏）","哀 want U","蒼鷺之火（裏）","或ル不和","VERTeX","美しく忙しきドナウ（裏）","ウルトラマンX（裏）","郢曲／暁闇","Agent Hustle & Dr. Hassle（表）","GERBERA","雲間を游ぐ","The Future of the 太鼓ドラム（表）","SAVAGE DELIGHT","〆ドレー2000","重金属フューギティブ","Xevel","其方、激昂","超絶技巧系少女","テトラリュトモスフォビア","天泣の律","転生〈TENSEI〉-喜与志が待つ強者-（裏）","Toon Town's Toys' Tune","ナイトメア・サバイバー（裏）","BATTLE NO.1[達人]","Honey Heartbeat ～10 Stars Mix～（裏）","Parousia","パン vs ごはん！ 大決戦！（表）[達人]","vs.VIGVANGS（表）","Mood Swing（裏）","もぺもぺ","螺旋周回軌道（裏）","LECIEL GLISSANDO","LUNATiC CiRCUiT","冷凍庫CJ ～嗚呼面太鼓ブラザーズ～","ARMAGEΔDON","Unwelcome School (MRM REMIX)（裏）","Irregular Clock（裏）","EterNal Ring","懐中庭園を持つ少女","絡繰廻廊","Caribbean Knight","GIGALODOON（裏）","鼓立あおはる学園校歌","束ね糸","チルノのパーフェクトさんすう教室➈周年バージョン（裏）","儚姫は原初に舞う（裏）","ひよこ鑑定士さん","FLOWER（裏）","BLAZING VORTEX（裏）","Player's High","ANiMA","Altale（裏）","Aleph-0","UNDEAD HEART(怒りのWarriors)","イオシス秋の爆食祭2024","怒槌","Valsqotch","OK I’m blue rat","KAGEKIYO（裏）","CUT! into the FUTURE（表）","極圏","沓の子を打つ（裏）","クラポルポルスカ","Groovy Duel","Goldfish City","Got more raves?（裏）","秋竜 ～Shiuryu～（裏）","疾風怒濤（表）","承認欲Q","Singularity Game","晨星ト鵺","SUPERNOVA（裏）","Stick Trick ShowTime!!","閃光天舞","SoulStone -闇喰イサァカス団-","SORA-VII シグナスウォール","月読命","電脳幻夜の星言詠","トイマチック☆パレード!!","Doom Noiz","Hello, Mr.JOKER","人のお金で焼肉を食したい！（裏）","FUJIN Rumble","Help me, さいたま2000!!","またさいたま2000","三瀬川乱舞（裏）","メカデス。（裏）","めためた☆ゆにば～すっ！（裏）","モノクロボイス（表）","Re：End of a Dream（裏）","竜と黒炎の姫君（裏）","練習曲Op.10-4（裏）","Rotter Tarmination（裏）","六本の薔薇と采の歌（裏）","What's in the box?","あなたとトゥラッタッタ♪（裏）","Aragami","案山子姫 -Princess Scarecrow-（裏）","Garakuta Doll Play（裏）","カラフルボイス（裏）","Calculator","気焔万丈神楽","Kill My Fortune（裏）","ゲゲゲの鬼太郎（裏）","刻竜 ～Kokuryu～（表）","神竜 ～Shinryu～（表）","Scarlet Lance","星河一天","憎悪と醜悪の花束（表）","Destr0yer（裏）","ドドドドドンだフル！（裏）","はたラク2000","Vixtory（表）","秘ナルメジェドノ悲ナル憂鬱","メタルホーク BGM1","memoria ficta","燎原ノ舞","愛と浄罪の森","アサガオ","Abyss of hell（裏）","天照","Ignis Danse","Illusion Flare","うちゅうひこうし冒険譚","ex寅 Trap!!","Evidence of evil","カラ鞠の花","ギガンティックO.T.N（裏）","きゅうくらりん（裏）","共奏鼓祭（裏）","Chronomia","弧","ゴーストマスク","ゴッドソング（裏）","God Ray","鼓舞曲「閻魔」","潮騒205号SSS線","紫煌ノ乱","蛇鉄","須佐之男","Spectral Rider","Soulway（達人）","D's Adventure Note","D絶対！SAMURAIインザレイン（裏）","Telecastic fake show","てんぢく2000","弩蚊怒夏","とける（表）","Dogbite","Doppelgangers（裏）","白鳥の湖～still a duckling～（裏）","ハンロック","平等院鳳凰ドン vs 鳥獣戯カッ（裏）","ヘイラ（裏）","ヘイラ（にじさんじVer.）（裏）","ペットショップ大戦","MagiCatz","ミュージック・リボルバー（裏）","YOU're your HERO","六華の舞","wonderful ROUTINE","あの日出会えたキセキ","アンリミテッドゲームズ（表）","ギミチョコ!!（裏）","Gloria","濃紅","濃紅（にじさんじVer.）","ココロボ","Central Dogma Pt.1（表）","夏祭り / ジッタリン・ジン（裏）","Purple Rose Fusion","みんなのうた","MEGALOVANIA（裏）","4+1のそれぞれの未来","Lightning Boys（表）","アキバ20XX","Aloft in the wind（裏）","イガク（裏）","頂","INSPION","ウィーアー！（裏）","waitin' for u","Angel Halo","オーバード（裏）","オーブの祈り","Oshama Scramble!（裏）","GIGALODOON（表）","きたさいたま2000","キャラメル・ジャンキヰ","Surf Zapping","Silent Jealousy（裏）","セイクリッド ルイン（裏）","零の交響曲（裏）","そつおめしき2ばん","十露盤2000","Diving Drive","ダンガンノーツ（表）","天下統一録","ドドンガド～ン（裏）","No Gravity","ノるどん2000","VICTORIA","ピコピコ ルイン（裏）","VIVIVIVID","FREEDOM DiVE↓","Venomous（裏）","星屑ストラック（表）","8OROCHI（表）","YOAKE","夜桜謝肉祭（裏）","ラヴ♡スパイス♡ライクユー!!!","Libera Ray","詩謳兎揺蕩兎","Extreme End","Emma（裏）[普通]","Garakuta Doll Play（裏）【双打】","ゴーゴー・キッチン（裏）","最終鬼畜妹フランドール・S","タイコタイム（裏）","乱数調整のリバースシンデレラ（裏）","R.I.","蒼の旋律（裏）","朱の旋律","EkiBEN2000","Kamikaze Remix","Calamity Fortune（表）","キューティー☆デモニック☆魔人エモ!!","【双打】紅（裏）","さちさちにしてあげる♪（裏）","スーパーD＆D ～完全にリードしてアイマイミー～","SUPERNOVA（表）","SstTAarR*","Soulway（開幕普通）","タイコロール","タベルナ2000","儚姫は原初に舞う（表）","BATTLE NO.1[玄人]","ヒバナ（裏）","Blessed Bouquet Buskers","よーいドン！","そつおめしき","初音ミクの激唱（表）","初音ミクの激唱（裏）","パン vs ごはん！ 大決戦！（表）[普通]","パン vs ごはん！ 大決戦！（裏）[普通]","Black Rose Apostle（表）","Black Rose Apostle（裏）","マツヨイナイトバグ（裏）","X-DAY2000","KAGEKIYO（裏）【双打】","Clotho クロートー","旋風ノ舞【天】（表）","旋風ノ舞【天】（裏）","チルノのパーフェクトさんすう教室（裏）","ネクロファンタジア ～ Arr.Demetori","拝啓ドッペルゲンガー","BATTLE NO.1[普通]","mint tears"
             ],
             'hard': [
@@ -346,6 +419,7 @@
             ]
         };
 
+        // --- Wake Lock ---
         const requestWakeLock = async () => {
             try {
                 if ('wakeLock' in navigator) {
@@ -358,12 +432,14 @@
             if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
         });
 
+        // --- タブ閉じ検知 ---
         const handleUnload = () => {
             if (currentRoomId && currentUser) deleteDoc(doc(db, "rooms", currentRoomId)).catch(()=>{});
             if (waitingDocId) deleteDoc(doc(db, "waiting_room", waitingDocId)).catch(()=>{});
         };
         window.addEventListener('beforeunload', handleUnload);
 
+        // --- View Mode ---
         window.setViewMode = (mode) => {
             const container = document.getElementById('main-container');
             const btnMobile = document.getElementById('btn-mobile');
@@ -382,6 +458,7 @@
         if (savedMode) window.setViewMode(savedMode);
         else window.setViewMode('mobile');
 
+        // --- Auth ---
         window.loginAnon = () => signInAnonymously(auth).catch(e => alert(e.message));
         window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => alert(e.message));
         window.loginWithEmail = async () => {
@@ -487,8 +564,6 @@
             switchScreen('matching-screen');
             document.getElementById('match-status').innerText = "対戦相手を待っています...";
             try {
-                // 安全マージン: 12秒以上待っている人とはマッチしない
-                // ゴースト退治: 15秒以上古いデータは削除
                 const q = query(collection(db, "waiting_room"), where("mode", "==", mode), limit(20));
                 const snap = await getDocs(q);
                 let opponentDoc = null;
@@ -497,29 +572,19 @@
                 for (const d of snap.docs) {
                     const data = d.data();
                     const elapsed = data.createdAt ? (now - data.createdAt.toMillis()) : 99999;
-                    
-                    if (elapsed > 15000) {
-                        deleteDoc(doc(db, "waiting_room", d.id)).catch(()=>{});
-                        continue; 
-                    }
-                    // ★安全マージン: 12秒以上経過している相手はスキップ
-                    if (elapsed > 12000) {
-                        continue;
-                    }
-
-                    if(data.uid !== currentUser.uid) {
-                        opponentDoc = d;
-                        break;
-                    }
+                    if (elapsed > 15000) { deleteDoc(doc(db, "waiting_room", d.id)).catch(()=>{}); continue; }
+                    if (elapsed > 12000) { continue; } // 安全マージン
+                    if(data.uid !== currentUser.uid) { opponentDoc = d; break; }
                 }
 
                 if(opponentDoc) {
                     const opp = opponentDoc.data();
                     await deleteDoc(doc(db, "waiting_room", opponentDoc.id));
+                    // ★重要: ルーム作成時にレート(rate)も保存する（計算用）
                     const roomRef = await addDoc(collection(db, "rooms"), {
                         mode: mode, songs: pickRandomSongs(mode), createdAt: new Date(),
-                        player1: { uid: opp.uid, xId: opp.xId, displayName: opp.displayName, result: null, lastSeen: Date.now() },
-                        player2: { uid: currentUser.uid, xId: userData.xId, displayName: userData.displayName, result: null, lastSeen: Date.now() }
+                        player1: { uid: opp.uid, xId: opp.xId, displayName: opp.displayName, rate: opp.rate, result: null, lastSeen: Date.now() },
+                        player2: { uid: currentUser.uid, xId: userData.xId, displayName: userData.displayName, rate: userData.rate, result: null, lastSeen: Date.now() }
                     });
                     localStorage.setItem('current_room_id', roomRef.id);
                     requestWakeLock();
@@ -592,7 +657,7 @@
                 
                 currentMatchData = { me, opponent, songs: data.songs, isP1 };
 
-                // ★ 切断検知 (780秒 = 13分)
+                // 13分(780秒)タイムアウト
                 const now = Date.now();
                 if (opponent.lastSeen && (now - opponent.lastSeen > 780000)) { 
                     deleteDoc(doc(db, "rooms", roomId)).catch(()=>{});
@@ -691,12 +756,28 @@
                 if(heartbeatTimer) clearInterval(heartbeatTimer);
                 if(wakeLock) wakeLock.release().catch(()=>{});
                 
-                const currentRate = Number(userData.rate) || 1500;
-                let newRate = currentRate;
-                let diff = 0;
-                if(myRes === 'WIN') diff = 20;
-                if(myRes === 'LOSE') diff = -20;
-                newRate = currentRate + diff;
+                // ★ Elo Rating Calculation ★
+                const K = 32;
+                const myRate = Number(currentMatchData.me.rate) || 1500;
+                const oppRate = Number(currentMatchData.opponent.rate) || 1500;
+                
+                // 期待勝率の計算
+                const expected = 1 / (1 + Math.pow(10, (oppRate - myRate) / 400));
+                
+                let actualScore = 0;
+                if (myRes === 'WIN') actualScore = 1;
+                else if (myRes === 'DRAW') actualScore = 0.5;
+                // else LOSE = 0
+
+                // 変動値
+                let diff = Math.round(K * (actualScore - expected));
+                
+                // 計算結果が0の場合でも、勝ったら最低+1、負けたら最低-1にする調整
+                if (diff === 0 && myRes === 'WIN') diff = 1;
+                if (diff === 0 && myRes === 'LOSE') diff = -1;
+
+                const newRate = myRate + diff;
+
                 try {
                     await setDoc(doc(db, "users", currentUser.uid), { rate: newRate }, { merge: true });
                     userData.rate = newRate; 
@@ -715,25 +796,97 @@
             goToReportScreen();
         };
 
+        // --- 豪華演出機能 ---
+        const triggerConfetti = () => {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const pieces = [];
+            for(let i=0; i<150; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    size: Math.random() * 10 + 5,
+                    speed: Math.random() * 5 + 2,
+                    angle: Math.random() * 360
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0,0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size/2, 0, Math.PI*2);
+                    ctx.fill();
+                    p.y += p.speed;
+                    p.x += Math.sin(p.angle * Math.PI / 180) * 2;
+                    if(p.y > canvas.height) p.y = -20;
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+            setTimeout(() => { canvas.style.display = 'none'; }, 5000); // 5秒で停止
+        };
+
         const showFinalResult = (result, diff, currentRate) => {
             switchScreen('final-result-screen');
             const title = document.getElementById('final-title');
+            const msg = document.getElementById('final-message');
             const diffEl = document.getElementById('anim-rate-diff');
             
+            diffEl.className = "rate-diff"; // リセット
             if(result === 'WIN') {
-                title.innerText = "YOU WIN!"; title.style.color = "#e91e63";
-                diffEl.innerText = "+" + diff; diffEl.style.color = "#e91e63";
+                title.innerText = "WIN!"; 
+                title.className = "result-text-win";
+                msg.innerText = "おめでとうございます！";
+                diffEl.innerText = "+" + diff; 
+                diffEl.classList.add("plus");
+                triggerConfetti(); // 紙吹雪発射
             } else if(result === 'LOSE') {
-                title.innerText = "YOU LOSE..."; title.style.color = "#2196f3";
-                diffEl.innerText = diff; diffEl.style.color = "#2196f3";
+                title.innerText = "LOSE..."; 
+                title.className = "result-text-lose";
+                msg.innerText = "ドンマイ！次こそは！";
+                diffEl.innerText = diff; 
+                diffEl.classList.add("minus");
             } else {
-                title.innerText = "DRAW"; title.style.color = "#9c27b0";
-                diffEl.innerText = "±0"; diffEl.style.color = "#9c27b0";
+                title.innerText = "DRAW"; 
+                title.className = ""; 
+                title.style.color = "#9c27b0";
+                msg.innerText = "熱い戦いでした！";
+                diffEl.innerText = (diff >= 0 ? "+" : "") + diff;
+                diffEl.style.background = "#9c27b0";
             }
-            document.getElementById('anim-rate-val').innerText = currentRate;
-            setTimeout(() => diffEl.classList.add('show'), 500);
+
+            // ドラムロール演出
+            const rateValEl = document.getElementById('anim-rate-val');
+            const startRate = currentRate - diff;
+            const duration = 1500;
+            const startTime = performance.now();
+
+            function updateRate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // easeOutExpo
+                const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                
+                const val = Math.floor(startRate + diff * ease);
+                rateValEl.innerText = val;
+
+                if(progress < 1) requestAnimationFrame(updateRate);
+                else {
+                    rateValEl.innerText = currentRate;
+                    diffEl.classList.add('show'); // 最後に増減値を表示
+                }
+            }
+            requestAnimationFrame(updateRate);
         };
 
+        // --- 退出ロジック ---
         window.tryExitRoom = () => {
             document.getElementById('exit-confirm-modal-1').style.display = 'flex';
         };
