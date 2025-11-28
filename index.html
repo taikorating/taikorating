@@ -147,6 +147,12 @@
         }
         .role-host { background: #e91e63; } /* 赤 */
         .role-guest { background: #2196f3; } /* 青 */
+        
+        /* リザルト手順の強調ボックス */
+        .result-step-box {
+            margin-top: 15px; font-size: 0.85rem; background: #fff; padding: 10px; border-radius: 8px; color: #333;
+        }
+        .highlight-text { color: #d32f2f; font-weight: bold; }
 
         /* --- 豪華演出用スタイル --- */
         #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; display: none; }
@@ -772,14 +778,28 @@
                         @1 対戦番号${matchId}
                     </div>
                     <a href="${url}" target="_blank" class="btn btn-x-share" style="display:block; text-decoration:none; text-align:center; color:white; margin-top:10px;">ツイートする</a>
+                    
+                    <div class="result-step-box">
+                        <strong>【リザルト提出】</strong><br>
+                        相手から「よろしくお願いします！」とリプが来たら、<br>
+                        <span class="highlight-text">そのリプライに対して</span>1曲ずつリザルトを貼ってください。<br>
+                        (計6枚のリプがぶら下がる形になります)
+                    </div>
+
                     <p style="font-size:0.8rem; color:#d32f2f; margin-top:10px;">
                         ※1〜2分待っても返信が来ない場合は、<br>一番下の「退出する」ボタンを押してください。
+                    </p>
+                    
+                    <p style="margin-top:15px; font-weight:bold; border-bottom:2px solid #e91e63; display:inline-block;">
+                        勝敗：3曲合計の「良」の数が多い方が勝ち
                     </p>
                 `;
             } else {
                 // IDから @ を除去
                 const cleanId = currentMatchData.opponent.xId ? currentMatchData.opponent.xId.replace('@', '') : '';
                 const profileUrl = `https://twitter.com/${cleanId}`;
+                const searchText = `@1 対戦番号${matchId}`;
+                const searchUrl = `https://twitter.com/search?q=${encodeURIComponent(searchText)}&f=live`;
 
                 instructionArea.innerHTML = `
                     <span class="role-badge role-guest">GUEST (参加)</span>
@@ -794,12 +814,30 @@
                     </p>
                     <a href="${profileUrl}" target="_blank" class="btn btn-x-share" style="display:block; text-decoration:none; text-align:center; color:white;">相手のXプロフィールへ</a>
                     
+                    <div style="margin-top:15px; padding:10px; background:#fff3e0; border-radius:8px; font-size:0.85rem;">
+                        <strong>どうしても見つからない場合</strong><br>
+                        以下の文言で検索してみてください。<br>
+                        <div style="font-weight:bold; margin:5px 0; user-select:all; -webkit-user-select:all;">${searchText}</div>
+                        <a href="${searchUrl}" target="_blank" style="color:#e65100; text-decoration:underline;">ここを押して検索する</a>
+                    </div>
+
+                    <div class="result-step-box">
+                        <strong>【リザルト提出】</strong><br>
+                        相手のツイートに「よろしくお願いします！」とリプした後、<br>
+                        <span class="highlight-text">その自分のリプライに対して</span>1曲ずつリザルトを貼ってください。<br>
+                        (計6枚のリプがぶら下がる形になります)
+                    </div>
+
                     <div style="margin-top:15px; font-size:0.85rem; color:#555; line-height:1.4;">
                         相手は2分以内にツイートするルールです。<br>
                         まずは<strong>1分ほど待ってみてください！</strong>
                     </div>
                     <p style="font-size:0.8rem; color:#d32f2f; margin-top:5px;">
                         ※もし2分経ってもツイートが見つからない場合は、<br>一番下の「退出する」ボタンを押してください。
+                    </p>
+
+                    <p style="margin-top:15px; font-weight:bold; border-bottom:2px solid #2196f3; display:inline-block;">
+                        勝敗：3曲合計の「良」の数が多い方が勝ち
                     </p>
                 `;
             }
